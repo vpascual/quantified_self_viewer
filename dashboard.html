@@ -1,0 +1,60 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+    <title>
+      Google Visualization API Sample
+    </title>
+    <script type="text/javascript" charset="utf8" src="http://ajax.aspnetcdn.com/ajax/jQuery/jquery-1.8.2.min.js"></script>
+    <script type="text/javascript" src="http://mbostock.github.com/d3/d3.js"></script>
+    <script type="text/javascript" src="//www.google.com/jsapi"></script>
+    <script type="text/javascript">
+      google.load('visualization', '1', {packages: ['linechart', 'table']});
+    </script>
+    <script type="text/javascript">
+    var visualization;
+    var properties = "hola";
+
+    $( document ).ready(function() {
+      properties = "adeu"
+      d3.json("config.json", function(props) {
+        properties = props
+      })
+      
+      google.setOnLoadCallback(drawVisualization);
+    });
+
+    function drawVisualization() {
+      console.log(properties)
+      // To see the data that this visualization uses, browse to
+      // http://spreadsheets.google.com/ccc?key=pCQbetd-CptGXxxQIG7VFIQ
+      var query = new google.visualization.Query(properties.sleep_report);
+    
+      // Apply query language.
+      query.setQuery('SELECT *');
+    
+      // Send the query with a callback function.
+      query.send(handleQueryResponse);
+    }
+    
+    function handleQueryResponse(response) {
+      if (response.isError()) {
+        alert('Error in query: ' + response.getMessage() + ' ' + response.getDetailedMessage());
+        return;
+      }
+    
+      var data = response.getDataTable();
+      // console.log(document.getElementById('visualization'))
+      var table = new google.visualization.Table(document.getElementById('visualization'));
+      table.draw(data, {showRowNumber: true});
+      // visualization = new google.visualization.LineChart(document.getElementById('visualization'));
+      // visualization.draw(data, {legend: 'bottom'});
+    }
+      
+    </script>
+  </head>
+  <body style="font-family: Arial;border: 0 none;">
+    <div id="visualization"></div>
+  </body>
+</html>
+​
