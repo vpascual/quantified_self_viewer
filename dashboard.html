@@ -2,6 +2,30 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+    <style>
+
+    body {
+      font: 10px sans-serif;
+    }
+
+    .axis path,
+    .axis line {
+      fill: none;
+      stroke: #000;
+      shape-rendering: crispEdges;
+    }
+
+    .x.axis path {
+      display: none;
+    }
+
+    .line {
+      fill: none;
+      stroke: steelblue;
+      stroke-width: 1.5px;
+    }
+
+    </style>
     <title>
       Google Visualization API Sample
     </title>
@@ -43,18 +67,114 @@
         return;
       }
     
-      var data = response.getDataTable();
-      // console.log(document.getElementById('visualization'))
-      var table = new google.visualization.Table(document.getElementById('visualization'));
-      table.draw(data, {showRowNumber: true});
-      // visualization = new google.visualization.LineChart(document.getElementById('visualization'));
+      var gdata = response.getDataTable();
+      console.log(gdata)
+      // var table = new google.visualization.Table(document.getElementById('visualization'));
+      // table.draw(gdata, {showRowNumber: true});
+      // visualization = new google.visualization.LineChart(document.getElementById('viz'));
       // visualization.draw(data, {legend: 'bottom'});
+
+      var data = gdata.xf;      
+
+      drawD3(data)
     }
-      
+
+    function drawD3(rawdata) {
+      var margin = {top: 20, right: 20, bottom: 30, left: 50},
+          width = 960 - margin.left - margin.right,
+          height = 500 - margin.top - margin.bottom;
+
+      // September 30, 2013 at 08:11AM
+      var parseDate = d3.time.format("%B %d, %Y at %I:%M%p").parse;
+
+      var x = d3.time.scale()
+          .range([0, width]);
+
+      var y = d3.scale.linear()
+          .range([height, 0]);
+
+      var xAxis = d3.svg.axis()
+          .scale(x)
+          .ticks(d3.time.weeks, 1)
+          .tickFormat(d3.time.format('%d-%m'))
+          .orient("bottom");
+
+      var yAxis = d3.svg.axis()
+          .scale(y)
+          .orient("left");
+
+      var line = d3.svg.line()
+          // .interpolate("cardinal")
+          .x(function(d) { return x(d.date); })
+          .y(function(d) { return y(d.deepSleep / 3600); });
+
+      var svg = d3.select("#viz").append("svg")
+          .attr("width", width + margin.left + margin.right)
+          .attr("height", height + margin.top + margin.bottom)
+        .append("g")
+          .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+      var data = [];
+      rawdata.forEach(function(d) {        
+        newValue = {};
+        totalSleep = +d.c[3]['v'];
+        
+        // excluding siestas by only getting night with more than 3 hours slept
+        if (totalSleep > 10800) {
+          newValue.date = parseDate(d.c[1]['v']);
+          newValue.totalSleep = totalSleep;
+          newValue.lightSleep = +d.c[5]['v']
+          newValue.deepSleep = +d.c[8]['v']
+          newValue.timeAwake = +d.c[11]['v']
+          // newValue.
+          // d.date = parseDate(d.date);
+          // d.close = +d.close;
+          data.push(newValue);
+        }
+      });
+
+      x.domain(d3.extent(data, function(d) { return d.date; }));
+      y.domain(d3.extent(data, function(d) { return d.deepSleep / 3600; }));
+
+      svg.append("g")
+          .attr("class", "x axis")
+          .attr("transform", "translate(0," + height + ")")
+          .call(xAxis);
+
+      svg.append("g")
+          .attr("class", "y axis")
+          .call(yAxis)
+        .append("text")
+          // .attr("transform", "rotate(-90)")
+          .attr("x", width/2)
+          .attr("y", 6)
+          .attr("dy", ".71em")
+          .style("text-anchor", "middle")
+          .text("Hours in deep sleep");
+
+      svg.append("path")
+          .datum(data)
+          .attr("class", "line")
+          .attr("d", line);
+
+      var points = svg.selectAll(".point")
+        .data(data)
+        .enter().append("svg:circle")
+           // .attr("stroke", "black")
+           .attr("fill", function(d, i) { return "steelblue" })
+           .attr("cx", function(d, i) { return x(d.date) })
+           .attr("cy", function(d, i) { return y(d.deepSleep / 3600) })
+           .attr("r", function(d, i) { return 2 })
+           .on("mouseover", function(d) {
+            console.log(d.date)
+           })
+    }
+       
     </script>
   </head>
   <body style="font-family: Arial;border: 0 none;">
-    <div id="visualization"></div>
+    <div id="viz"></div>
+    <p>Estaria bé calcular el z-score de l'exercici que faig i del deep sleep per poder-los comparar en el matiex gràfic</p>
   </body>
 </html>
 ​
